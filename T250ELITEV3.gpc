@@ -1,0 +1,887 @@
+/*
+ =========================================================
+   ███████╗██╗     ██╗████████╗███████╗
+   ██╔════╝██║     ██║╚══██╔══╝██╔════╝
+   █████╗  ██║     ██║   ██║   █████╗  
+   ██╔══╝  ██║     ██║   ██║   ██╔══╝  
+   ███████╗███████╗██║   ██║   ███████╗
+   ╚══════╝╚══════╝╚═╝   ╚═╝   ╚══════╝
+          SCRIPTED V1 ELITE - COMBAT BASE
+ =========================================================
+*/
+
+//===============================================================
+//    ELITE LAYOUT & GRANULAR AA SETUP                                             
+//===============================================================
+// Select Your Layout:
+// 0 = Default
+// 1 = Tactical
+// 2 = Default Flipped
+// 3 = Tactical Flipped
+int Elite_Button_Layout = 3; 
+
+// Granular Elite Aim Assist Profile
+// 1 = Core Tracking (Rotational + Magnetic)
+// 2 = Figure-8 (Optimized for aggressive strafing)
+// 3 = Helix Pull (Vertical bias)
+int Elite_AA_Profile = 1; 
+int Elite_AA_Intensity = 2; // Intensity Multiplier (1 to 5)
+
+// Dynamic Button Variables (Auto-mapped in init)
+int FIRE_BTN, ADS_BTN, TACTICAL_BTN, LETHAL_BTN, CROUCH_BTN, MELEE_BTN;
+int SPRINT_BTN = XB1_LS;
+int JUMP_BTN = XB1_A;
+int SWITCHWEAPON_BTN = XB1_Y;
+int RELOAD_BTN = XB1_X;
+
+define UP                   = XB1_UP;
+define RIGHT                = XB1_RIGHT;
+define DOWN                 = XB1_DOWN;
+define LEFT                 = XB1_LEFT;
+define RX                   = XB1_RX;
+define RY                   = XB1_RY;
+define LX                   = XB1_LX;
+define LY                   = XB1_LY;
+
+//===============================================================
+//    ELITE ADJUSTABLE VARIABLES                                       
+//===============================================================
+int adjust_variable_idx;                  
+int EliteRecoil_V;
+int EliteRecoil_H;
+int AimSize;
+int FireSize;
+int AimAndFireSize;
+int AimSpeed;
+int HipSize;
+int GEN_SENS;
+int ADS_SENS;
+int FIRE_SENS;
+int ADS_FIRE_SENS;
+int GRENADE_SENS;
+int DeadZone;
+int AimFireBoost;
+
+define AMOUNT_OF_VALNAME_IDX = 13; 
+
+//===============================================================
+//    ELITE MOD TOGGLES                                      
+//===============================================================
+define MAX_MODS_COUNT = 13;                          
+int modName_idx;  
+
+int EliteRecoil_Active   = 1; 
+int EliteAA_Active       = 0; 
+int SniperBreath_Active  = 0; 
+int CustomSens_Active    = 0; 
+int Movement_BunnyHop    = 0; 
+int AutoSpot_Active      = 0; 
+int AutoReload_Active    = 0; 
+int HairTrigger_Active   = 0; 
+int StickDrift_Fix       = 0; 
+int StickyAim_Active     = 0; 
+int BlockRumble_Active   = 0; 
+int AimFireBoost_Active  = 0; 
+int YY_Movement_Active   = 0; 
+int VM_Speed_Setting     = 4;
+int YY_Delay_Timing      = 35;
+
+int EliteTrack_Delay     = 2;
+int EliteTrack_Strength  = 24; 
+int track_smooth_x;
+int track_smooth_y;
+int track_dynamic_strength;
+int aa_rot_dir = 1;
+int aa_grim_dir = 1;
+int aa_mag_dir = 1;
+
+//===============================================================
+//    NEW PREMIUM OLED MENU STRINGS                                       
+//===============================================================
+const string MENU_TOP_TITLE      = "SCRIPTED V1 ELITE";
+const string MOD_DIVIDER         = "/";
+
+const string ELITE_RECOIL        = "Elite Recoil" ; 
+const string ELITE_AA_BASE       = "Elite AA" ; 
+const string SNIPER_BREATH       = "Sniper Breath" ; 
+const string CUSTOM_SENS         = "Sensitivity" ; 
+const string MOVEMENT_BHOP       = "Bunny Hop" ; 
+const string AUTO_SPOT           = "Auto Spot" ; 
+const string AUTO_RELOAD         = "Auto Reload" ; 
+const string HAIR_TRIGGERS       = "Hair Trigg" ; 
+const string STICK_FIX           = "Dead Zone" ; 
+const string STICKY_AIM          = "Sticky Aim" ; 
+const string RUMBLE_BLOCK        = "Vibr Block" ; 
+const string FIRE_BOOST          = "FireAimBst" ; 
+const string YY_MACRO            = "YY Spam" ; 
+const string VM_OPTIMIZER        = "VM Speed" ; 
+
+const string RECOIL_VERTICAL     = "Recoil Vert";
+const string RECOIL_HORIZONTAL   = "Recoil Horiz";
+
+const string OFF   = "OFF";    
+const string ON    = "ON";   
+const string SCRIPT_ONOFF  = "ELITE WAS";   
+
+const string BOOT_TXT_1 = "SCRIPTED V1";
+const string BOOT_TXT_2 = "ELITE";
+const string BOOT_TXT_3 = "LOADING...";
+
+const int8 ASCII_NUM[] = {48,49,50,51,52,53,54,55,56,57};                
+
+const string NO_EDIT_VAR1  = "No Edit Variables";
+const string NO_EDIT_VAR2  = "for this MOD";
+
+const uint8 Options [] = { 1, 1, 7, 1, 1, 55, 1, 1, 1, 1, 1, 1, 1, 50 };
+const uint8 EditVal [] = { 1, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0 };
+const uint8 OptRange [][] = { { 0 , 1 }, { 0 , 0 }, { 0 , 0 }, { 7 , 11 }, { 0 , 0 }, { 0 , 0 }, { 0 , 0 }, { 0 , 0 }, { 12 , 12 }, { 14 , 15 }, { 0 , 0 }, { 13 , 13 }, { 16 , 16 }, { 0 , 0 } };
+const uint8 Min_Max_Options [][]={ { 0 , 1 }, { 0 , 1 }, { 0 , 2 }, { 0 , 1 }, { 0 , 1 }, { 0 , 4 }, { 0 , 1 }, { 0 , 1 }, { 0 , 1 }, { 0 , 1 }, { 0 , 1 }, { 0 , 1 }, { 0 , 1 }, { 0 , 5 } }; 
+
+const string EditVarStr []={ "Recoil Vert", "Recoil Horiz", "Aim Size", "Fire Size", "Aim and Fire Size", "Speed", "Hip Size", "GEN SENS", "ADS SENS", "FIRE SENS", "ADS FIRE S", "GRENADE S", "Dead Zone", "Boost", "Trk Str", "Trk Delay", "YY Delay" };
+
+define TimeToShowIntroPicture = 30000;
+define StartupArtworkDelay = 2500;
+
+/////////////////////////////////////////////////////////////////////////////   
+init {  
+
+    if(Elite_Button_Layout == 0) { // Default
+        FIRE_BTN = XB1_RT; ADS_BTN = XB1_LT; TACTICAL_BTN = XB1_LB; LETHAL_BTN = XB1_RB; CROUCH_BTN = XB1_B; MELEE_BTN = XB1_RS;
+    } else if(Elite_Button_Layout == 1) { // Tactical
+        FIRE_BTN = XB1_RT; ADS_BTN = XB1_LT; TACTICAL_BTN = XB1_LB; LETHAL_BTN = XB1_RB; CROUCH_BTN = XB1_RS; MELEE_BTN = XB1_B;
+    } else if(Elite_Button_Layout == 2) { // Default Flipped
+        FIRE_BTN = XB1_RB; ADS_BTN = XB1_LB; TACTICAL_BTN = XB1_LT; LETHAL_BTN = XB1_RT; CROUCH_BTN = XB1_B; MELEE_BTN = XB1_RS;
+    } else if(Elite_Button_Layout == 3) { // Tactical Flipped
+        FIRE_BTN = XB1_RB; ADS_BTN = XB1_LB; TACTICAL_BTN = XB1_LT; LETHAL_BTN = XB1_RT; CROUCH_BTN = XB1_RS; MELEE_BTN = XB1_B;
+    }
+
+    EliteRecoil_Active       = get_pvar(SPVAR_1,0,1,1); 
+    EliteAA_Active           = get_pvar(SPVAR_2,0,1,0); 
+    SniperBreath_Active      = get_pvar(SPVAR_3,0,2,0); 
+    CustomSens_Active        = get_pvar(SPVAR_4,0,1,0); 
+    Movement_BunnyHop        = get_pvar(SPVAR_5,0,1,0); 
+    AutoSpot_Active          = get_pvar(SPVAR_6,0,4,0); 
+    AutoReload_Active        = get_pvar(SPVAR_7,0,1,0); 
+    HairTrigger_Active       = get_pvar(SPVAR_8,0,1,0); 
+    StickDrift_Fix           = get_pvar(SPVAR_9,0,1,0); 
+    StickyAim_Active         = get_pvar(SPVAR_16,0,1,0);
+    BlockRumble_Active       = get_pvar(SPVAR_17,0,1,0);
+    AimFireBoost_Active      = get_pvar(SPVAR_19,0,1,0);
+    YY_Movement_Active       = get_pvar(SPVAR_18,0,1,0);
+    VM_Speed_Setting         = get_pvar(SPVAR_10,0,5,4); 
+    EliteRecoil_V            = get_pvar(SPVAR_21, 1,99, 28);
+    EliteRecoil_H            = get_pvar(SPVAR_22, -99,99, 0);
+    AimSize                  = get_pvar(SPVAR_23, 1,50, 20);
+    FireSize                 = get_pvar(SPVAR_24, 1,50, 20);
+    AimAndFireSize           = get_pvar(SPVAR_25, 1,50, 22);
+    AimSpeed                 = get_pvar(SPVAR_26, 1,100, 32);
+    HipSize                  = get_pvar(SPVAR_27, 1,50, 10);
+    GEN_SENS                 = get_pvar(SPVAR_28, 70,327, 86);
+    ADS_SENS                 = get_pvar(SPVAR_29, 70,327, 90);
+    FIRE_SENS                = get_pvar(SPVAR_30, 70,327, 98);
+    ADS_FIRE_SENS            = get_pvar(SPVAR_31, 70,327, 86);
+    GRENADE_SENS             = get_pvar(SPVAR_32, 70,327, 100);
+    DeadZone                 = get_pvar(SPVAR_33, 0,50, 10);
+    AimFireBoost             = get_pvar(SPVAR_34, 1,10, 4);
+    EliteTrack_Strength      = get_pvar(SPVAR_35, 10,48, 26);
+    EliteTrack_Delay         = get_pvar(SPVAR_36, 0,6, 1);
+    YY_Delay_Timing          = get_pvar(SPVAR_37, 20,100, 35);
+
+    slot_numb = get_slot();
+    EliteStartupPrint();
+    startup_splash_active = TRUE;
+    startup_splash_stage = 0;
+    startup_splash_time = 0;
+    display_black = TRUE;
+    count_black = 0;
+}
+
+main {
+    if(get_ival(ADS_BTN)){
+        if(event_press(XB1_VIEW)){
+            EntireScript_OnOff = !EntireScript_OnOff;
+            blinck(EntireScript_OnOff);
+            display_MOD_status(EntireScript_OnOff, center_x(sizeof(SCRIPT_ONOFF)- 1, OLED_FONT_MEDIUM_WIDTH), SCRIPT_ONOFF[0]);
+            show_mesage_time = 2000;
+            if(!EntireScript_OnOff) set_Virtual_Machine_Speed(VM_Default); 
+        }
+    }
+                          
+    if(show_mesage_time){
+        show_mesage_time -= get_rtime();
+        if(show_mesage_time <= 0) cls_oled(0);    
+    }
+                               
+    if(EntireScript_OnOff){
+        if(menu_back_lock > 0) menu_back_lock -= get_rtime();
+        if(ModEdit || ModMenu) set_Virtual_Machine_Speed(VM_Default);
+        
+        if(display_EDIT){                
+            cls_oled(0);                        
+            if(EditVal[ modName_idx ] == 0 ){  
+                draw_rectangle();
+                print( center_x(sizeof(NO_EDIT_VAR1)-1, OLED_FONT_SMALL_WIDTH), 24, OLED_FONT_SMALL, 1, NO_EDIT_VAR1[0] ); 
+                print( center_x(sizeof(NO_EDIT_VAR2)-1, OLED_FONT_SMALL_WIDTH), 36, OLED_FONT_SMALL, 1, NO_EDIT_VAR2[0] ); 
+            } else {
+                display_edit( get_pvar_val(adjust_variable_idx));
+                set_pvar_val(adjust_variable_idx, edit_val(get_pvar_val(adjust_variable_idx)));
+            }
+        }  
+        if(refresh_OLED) { 
+            cls_oled(0);       
+            draw_rectangle(); 
+            if(modName_idx == 0)display_mod( center_x(sizeof(ELITE_RECOIL)- 1, OLED_FONT_SMALL_WIDTH ) ,ELITE_RECOIL[0],EliteRecoil_Active,Options[ modName_idx ]);
+            if(modName_idx == 1)display_mod( center_x(sizeof(ELITE_AA_BASE)- 1, OLED_FONT_SMALL_WIDTH ) ,ELITE_AA_BASE[0],EliteAA_Active,Options[ modName_idx ]);
+            if(modName_idx == 2)display_mod( center_x(sizeof(SNIPER_BREATH)- 1, OLED_FONT_SMALL_WIDTH ) ,SNIPER_BREATH[0],SniperBreath_Active,Options[ modName_idx ]);
+            if(modName_idx == 3)display_mod( center_x(sizeof(CUSTOM_SENS)- 1, OLED_FONT_SMALL_WIDTH ) ,CUSTOM_SENS[0],CustomSens_Active,Options[ modName_idx ]);
+            if(modName_idx == 4)display_mod( center_x(sizeof(MOVEMENT_BHOP)- 1, OLED_FONT_SMALL_WIDTH ) ,MOVEMENT_BHOP[0],Movement_BunnyHop,Options[ modName_idx ]);
+            if(modName_idx == 5)display_mod( center_x(sizeof(AUTO_SPOT)- 1, OLED_FONT_SMALL_WIDTH ) ,AUTO_SPOT[0],AutoSpot_Active,Options[ modName_idx ]);
+            if(modName_idx == 6)display_mod( center_x(sizeof(AUTO_RELOAD)- 1, OLED_FONT_SMALL_WIDTH ) ,AUTO_RELOAD[0],AutoReload_Active,Options[ modName_idx ]);
+            if(modName_idx == 7)display_mod( center_x(sizeof(HAIR_TRIGGERS)- 1, OLED_FONT_SMALL_WIDTH ) ,HAIR_TRIGGERS[0],HairTrigger_Active,Options[ modName_idx ]);
+            if(modName_idx == 8)display_mod( center_x(sizeof(STICK_FIX)- 1, OLED_FONT_SMALL_WIDTH ) ,STICK_FIX[0],StickDrift_Fix,Options[ modName_idx ]);
+            if(modName_idx == 9)display_mod( center_x(sizeof(STICKY_AIM)- 1, OLED_FONT_SMALL_WIDTH ) ,STICKY_AIM[0],StickyAim_Active,Options[ modName_idx ]);
+            if(modName_idx == 10)display_mod( center_x(sizeof(RUMBLE_BLOCK)- 1, OLED_FONT_SMALL_WIDTH ) ,RUMBLE_BLOCK[0],BlockRumble_Active,Options[ modName_idx ]);
+            if(modName_idx == 11)display_mod( center_x(sizeof(FIRE_BOOST)- 1, OLED_FONT_SMALL_WIDTH ) ,FIRE_BOOST[0],AimFireBoost_Active,Options[ modName_idx ]);
+            if(modName_idx == 12)display_mod( center_x(sizeof(YY_MACRO)- 1, OLED_FONT_SMALL_WIDTH ) ,YY_MACRO[0],YY_Movement_Active,Options[ modName_idx ]);
+            if(modName_idx == 13)display_mod( center_x(sizeof(VM_OPTIMIZER)- 1, OLED_FONT_SMALL_WIDTH ) ,VM_OPTIMIZER[0],VM_Speed_Setting,Options[ modName_idx ]);
+            refresh_OLED = FALSE; 
+        } 
+        if(startup_splash_active && !display_black) {
+            startup_splash_active = FALSE;
+            startup_splash_stage = 0;
+            startup_splash_time = 0;
+        }
+
+        if(display_black ) {                            
+            count_black += get_rtime();
+            if(startup_splash_active) {
+                startup_splash_time += get_rtime();
+                if(startup_splash_stage == 0 && startup_splash_time >= StartupArtworkDelay) {
+                    ElitePrint();
+                    startup_splash_stage = 1;
+                    startup_splash_time = 0;
+                    count_black = 0;
+                }
+            }
+            if(count_black >= TimeToShowIntroPicture) {                        
+                cls_oled(0);         
+                count_black = 0;      
+                display_black = FALSE; 
+                startup_splash_active = FALSE;
+                startup_splash_stage = 0;
+                startup_splash_time = 0;
+            }                         
+        }                           
+                                
+        if(ModEdit){ 
+            if(event_press(XB1_B) && menu_back_lock <= 0){
+                ModEdit      = FALSE;           
+                display_EDIT = FALSE;           
+                ModMenu      = TRUE;            
+                menu_back_lock = menu_back_lock_time;
+                MenuTimeOut  = menu_time_active;
+                refresh_OLED = TRUE;
+            } else {
+                block_all_inputs(); 
+                if(!get_ival(ADS_BTN) && event_press(XB1_RIGHT)){            
+                    adjust_variable_idx ++;                 
+                    if(adjust_variable_idx > OptRange[ modName_idx ][ 1 ])  adjust_variable_idx = OptRange[ modName_idx ][ 1 ]; 
+                    refresh_OLED = FALSE;      
+                    display_EDIT = TRUE;        
+                }          
+                if(!get_ival(ADS_BTN) && event_press(XB1_LEFT)){  
+                    adjust_variable_idx --;                                      
+                    if(adjust_variable_idx < OptRange[ modName_idx ][ 0 ]) adjust_variable_idx = OptRange[ modName_idx ][ 0 ];
+                    refresh_OLED = FALSE;      
+                    display_EDIT = TRUE;        
+                }
+            }                                                           
+            if(MenuTimeOut) CheckIfBtnIsPressed();
+        }
+           
+        if(get_ival(ADS_BTN) && event_press(XB1_MENU)){  
+            ModMenu = TRUE;  
+            modName_idx  = 0;                   
+            refresh_OLED = TRUE;   
+            display_EDIT = FALSE;        
+            display_black = FALSE;
+            count_black = 0;
+            gameplay_idle_time = 0;
+            startup_splash_active = FALSE;
+            startup_splash_stage = 0;
+            startup_splash_time = 0;
+            MenuTimeOut  = menu_time_active;
+        }      
+   
+        if(ModMenu && !ModEdit){  
+            if(event_press(XB1_B) && menu_back_lock <= 0){
+                ModMenu = FALSE;                     
+                ModEdit = FALSE;              
+                menu_back_lock = menu_back_lock_time;
+                if(need_to_be_save) combo_run(MESSAGE);
+                else combo_run(EXIT);
+            } else {
+                block_all_inputs(); 
+                if(event_press(XB1_A)){
+                    ModMenu             = FALSE;   
+                    adjust_variable_idx = OptRange[ modName_idx ][ 0 ]; 
+                    ModEdit             = TRUE;   
+                    display_EDIT        = TRUE; 
+                }                    
+                                  
+                if( !get_ival(ADS_BTN) && event_press(XB1_RIGHT)){ 
+                    modName_idx ++;                 
+                    if(modName_idx > MAX_MODS_COUNT) modName_idx = 0; 
+                    blinck( get_mod_toggle(modName_idx)); 
+                }                          
+                if(!get_ival(ADS_BTN) && event_press(XB1_LEFT)){  
+                    modName_idx --;                                      
+                    if(modName_idx < 0) modName_idx = MAX_MODS_COUNT;
+                    blinck( get_mod_toggle(modName_idx)); 
+                }                        
+                                  
+                display_black = FALSE;    
+                gameplay_idle_time = 0;
+
+                if(!get_ival(ADS_BTN) ){    
+                    if(event_press(XB1_UP)) set_mod_toggle(modName_idx, f_go_back( get_mod_toggle(modName_idx) )); 
+                    if(event_press(XB1_DOWN)) set_mod_toggle(modName_idx, f_go_forward( get_mod_toggle(modName_idx) ));
+
+                    if(modName_idx == 1) {
+                        if(event_press(TACTICAL_BTN)) set_mod_toggle(modName_idx, f_go_back(get_mod_toggle(modName_idx)));
+                        if(event_press(LETHAL_BTN)) set_mod_toggle(modName_idx, f_go_forward(get_mod_toggle(modName_idx)));
+                        set_val(TACTICAL_BTN,0);
+                        set_val(LETHAL_BTN,0);
+                    }
+                } 
+                refresh_OLED = TRUE;   
+                set_val(XB1_UP,0); 
+                set_val(XB1_DOWN,0); 
+                set_val(XB1_LEFT,0); 
+                set_val(XB1_RIGHT,0); 
+                if(MenuTimeOut) CheckIfBtnIsPressed();
+            }
+        } 
+    
+        if(!ModMenu && !ModEdit) {
+            gameplay_idle_time += get_rtime();
+            if(gameplay_idle_time >= TimeToShowIntroPicture && !display_black) {
+                ElitePrint();
+                display_black = TRUE;
+                gameplay_idle_time = 0;
+            }
+            if(get_ival(ADS_BTN) && event_press(XB1_MENU)) {
+                gameplay_idle_time = 0;
+                display_black = FALSE;
+                cls_oled(0);
+            }
+            if(event_press(XB1_VIEW)) {
+                gameplay_idle_time = 0;
+                display_black = FALSE;
+                cls_oled(0);
+            }
+        }
+    
+        if(!ModEdit && !ModMenu){
+            combo_run(Blink_MOD_ON);          
+            set_Virtual_Machine_Speed(VM_Speed_Setting);
+
+            if(EliteRecoil_Active && KS_anti_recoil){                               
+                if(get_ival(XB1_B)){
+                    if(event_press(XB1_UP)){
+                        EliteRecoil_V += 1;
+                        on_the_fly_display(RECOIL_VERTICAL[0], center_x(sizeof(RECOIL_VERTICAL) - 1, OLED_FONT_MEDIUM_WIDTH), EliteRecoil_V);
+                    }
+                    if(event_press(XB1_DOWN)) {
+                        EliteRecoil_V -= 1;
+                        on_the_fly_display(RECOIL_VERTICAL[0], center_x(sizeof(RECOIL_VERTICAL) - 1, OLED_FONT_MEDIUM_WIDTH), EliteRecoil_V);
+                    }
+                    set_val(XB1_UP,0); set_val(XB1_DOWN,0);
+                                                           
+                    if(event_press(XB1_LEFT)){
+                        EliteRecoil_H -= 1;
+                        on_the_fly_display(RECOIL_HORIZONTAL[0], center_x(sizeof(RECOIL_HORIZONTAL) - 1, OLED_FONT_MEDIUM_WIDTH), EliteRecoil_H);
+                    }
+                    if(event_press(XB1_RIGHT)) {
+                        EliteRecoil_H +=  1;
+                        on_the_fly_display(RECOIL_HORIZONTAL[0], center_x(sizeof(RECOIL_HORIZONTAL) - 1, OLED_FONT_MEDIUM_WIDTH), EliteRecoil_H);
+                    }
+                    set_val(XB1_LEFT,0); set_val(XB1_RIGHT,0);
+                    if(event_press(XB1_GUIDE)) combo_run(MESSAGE);       
+                    set_val(XB1_GUIDE,0);
+                }
+            }    
+
+            if(time_to_clear_screen){               
+                time_to_clear_screen -= get_rtime();
+                if(time_to_clear_screen <= 0 ) QT_MESSAGE_TIMEOUT();     
+            }            
+
+            if(EliteAA_Active && (get_ival(ADS_BTN) || get_ival(FIRE_BTN))) {
+                if(abs(get_val(RX)) < 18 && abs(get_val(RY)) < 18) {
+                    if (Elite_AA_Profile == 1) {
+                        set_val(RX, clamp(get_val(RX) + (22 * aa_rot_dir * Elite_AA_Intensity) / 140, -100, 100));
+                        aa_rot_dir = -aa_rot_dir;
+                        set_val(RY, clamp(get_val(RY) + (8 * Elite_AA_Intensity) / 140, -100, 100));
+                        set_val(RY, clamp(get_val(RY) + (20 * aa_grim_dir * Elite_AA_Intensity) / 140, -100, 100));
+                        aa_grim_dir = -aa_grim_dir;
+                        set_val(RX, clamp(get_val(RX) + (22 * aa_mag_dir * Elite_AA_Intensity) / 140, -100, 100));
+                        aa_mag_dir = -aa_mag_dir;
+                    } else if (Elite_AA_Profile == 2) {
+                        set_val(RX, clamp(get_val(RX) + (30 * aa_rot_dir * Elite_AA_Intensity) / 140, -100, 100));
+                        set_val(RY, clamp(get_val(RY) + (15 * aa_grim_dir * Elite_AA_Intensity) / 140, -100, 100));
+                        aa_rot_dir = -aa_rot_dir;
+                        if (aa_rot_dir == 1) aa_grim_dir = -aa_grim_dir;
+                    } else if (Elite_AA_Profile == 3) {
+                        set_val(RX, clamp(get_val(RX) + (15 * aa_rot_dir * Elite_AA_Intensity) / 140, -100, 100));
+                        set_val(RY, clamp(get_val(RY) + (25 * aa_grim_dir * Elite_AA_Intensity) / 140, -100, 100));
+                        aa_rot_dir = -aa_rot_dir;
+                        aa_grim_dir = -aa_grim_dir;
+                    }
+                    combo_run(EliteAA_Combo);
+                } else {
+                    combo_stop(EliteAA_Combo);
+                }
+            } else {
+                combo_stop(EliteAA_Combo);
+            }
+
+            ApplyEliteRecoil();
+
+            if(AimFireBoost_Active && get_ival(FIRE_BTN)) {
+                if(get_ival(ADS_BTN)) combo_run(Elite_FireAimBoost);
+                else combo_stop(Elite_FireAimBoost);
+            } else {
+                combo_stop(Elite_FireAimBoost);
+            }
+
+            if(SniperBreath_Active == 1) {
+                if(get_ival(ADS_BTN)) set_val(SPRINT_BTN, 100);
+            }
+            if(SniperBreath_Active == 2) {
+                if(get_ival(ADS_BTN)) hbreath_time += get_rtime();
+                else hbreath_time = 0;
+                if(hbreath_time > 100) set_val(SPRINT_BTN, 100);
+            }
+
+            if(CustomSens_Active) {
+                if(get_ival(ADS_BTN) && get_ival(FIRE_BTN)) USE_SENS = ADS_FIRE_SENS;
+                else if(get_ival(ADS_BTN)) USE_SENS = ADS_SENS;
+                else if(get_ival(FIRE_BTN)) USE_SENS = FIRE_SENS;
+                else if(get_ival(LETHAL_BTN)) USE_SENS = GRENADE_SENS;
+                else USE_SENS = GEN_SENS;
+                sensitivity(RY, NOT_USE, USE_SENS);
+                sensitivity(RX, NOT_USE, USE_SENS);
+            }
+
+            if(Movement_BunnyHop) {
+                if(get_ival(JUMP_BTN) && get_ptime(JUMP_BTN) > 200) combo_run(EliteBhop);
+                else combo_stop(EliteBhop);
+            }
+
+            if(AutoSpot_Active && KS_auto_spot) {
+                if(AutoSpot_Active == 1 && get_ival(FIRE_BTN)) combo_run(EliteSpot_cmb);
+                if(AutoSpot_Active == 2 && get_ival(ADS_BTN)) combo_run(EliteSpot_cmb);
+                if(AutoSpot_Active == 3 && get_ival(FIRE_BTN)) combo_run(EliteSpot_cmb);
+                if(AutoSpot_Active == 4) {
+                    if(double_click(SPOT_BTN)) AlwaysON_ASpot = !AlwaysON_ASpot;
+                    if(AlwaysON_ASpot) combo_run(EliteSpot_cmb);
+                }
+            }
+
+            if(StickyAim_Active) {
+                if(get_ival(FIRE_BTN)) {
+                    if(get_ival(ADS_BTN)) track_dynamic_strength = clamp(EliteTrack_Strength + 12, 10, 48);
+                    else track_dynamic_strength = clamp(EliteTrack_Strength + 2, 10, 48);
+                    combo_run(EliteTracking);
+                } else {
+                    combo_stop(EliteTracking);
+                    ResetEliteTrackState();
+                }
+            } else {
+                combo_stop(EliteTracking);
+                ResetEliteTrackState();
+            }
+
+            if(AutoReload_Active) {
+                if(event_release(FIRE_BTN)) combo_run(EliteReload_cmb);
+            }
+
+            if(YY_Movement_Active && event_press(SPRINT_BTN)) {
+                combo_run(EliteYY_cmb);
+            }
+
+            if(HairTrigger_Active) deadzone(XB1_LT,XB1_RT,99,99);
+            if(StickDrift_Fix) FixStickDrift();
+            if(BlockRumble_Active) block_rumble();
+        } 
+    } 
+} 
+
+const int16 ValRange [][] ={ { 1,99 }, { -99,99 }, { 1,50 }, { 1,50 }, { 1,50 }, { 1,100 }, { 1,50 }, { 70,327 }, { 70,327 }, { 70,327 }, { 70,327 }, { 70,327 }, { 0,50 }, { 1,10 }, { 10,48 }, { 0,6 }, { 20,100 } };       
+       
+define VM_Default = 0;
+function set_Virtual_Machine_Speed (f_speed){
+    if     (f_speed == 0) vm_tctrl(-0);
+    else if(f_speed == 1) vm_tctrl(-2);
+    else if(f_speed == 2) vm_tctrl(-4);
+    else if(f_speed == 3) vm_tctrl(-6);
+    else if(f_speed == 4) vm_tctrl(-8);
+    else if(f_speed == 5) vm_tctrl(-9);
+}
+           
+int time_to_clear_screen;
+function QT_MESSAGE_TIMEOUT (){ cls_oled(0); }                                  
+                                      
+int exit_wait = 1500;
+combo EXIT {     
+	wait(exit_wait);     
+	cls_oled(0);    
+    display_black = FALSE;
+    count_black = 0;
+    gameplay_idle_time = 0;
+    startup_splash_active = FALSE;
+    startup_splash_stage = 0;
+    startup_splash_time = 0;
+	ModMenu = FALSE;  
+	ModEdit = FALSE;    
+	display_EDIT  = FALSE; 
+}                      
+
+int b_dblclick;
+function double_click (button) {                      
+    if (b_dblclick) b_dblclick -=get_rtime();                                      
+    if (event_press(button) ) {
+        if(b_dblclick){
+            b_dblclick = 0;
+            return TRUE;
+        }else{
+            b_dblclick = 300;
+            return FALSE;
+        }
+    }                                                 
+    return FALSE;                                        
+}           
+
+define ColorOFF  = 0;
+define Blue      = 1;
+define Red       = 2;
+define Green     = 3;
+define Pink      = 4;
+define SkyBlue   = 5;
+define Yellow    = 6;
+define White     = 7;
+
+const uint8 LED_COLORS[] = { 0,0,0, 2,0,0, 0,2,0, 0,0,2, 2,2,0, 2,0,2, 0,2,2, 2,2,2 };
+
+int data_indx;
+function colourled(color) {  
+    for( data_indx = 0; data_indx < 3; data_indx++ ) {
+        set_led(data_indx,LED_COLORS[(color * 3) + data_indx]);
+    }
+}
+
+int display_black;      
+int refresh_OLED;        
+int ModMenu;    
+int ModEdit;   
+int display_EDIT;   
+int EntireScript_OnOff = TRUE;
+int show_mesage_time; 
+int count_black;
+int gameplay_idle_time;
+int startup_splash_active;
+int startup_splash_stage;
+int startup_splash_time;
+int menu_back_lock;
+int need_to_be_save;                 
+int BlinckColor = 3;                 
+int hbreath_time;
+int USE_SENS;
+
+combo EliteBhop{ set_val(JUMP_BTN, 100); wait(40); set_val(JUMP_BTN, 0); wait(80); set_val(JUMP_BTN, 100); wait(40); set_val(JUMP_BTN, 0); wait(80); }
+
+define DoubleTapMarkBtn = FALSE;
+define SPOT_BTN = PS4_R1;
+int AlwaysON_ASpot = TRUE;
+int KS_auto_spot   = TRUE;
+
+combo EliteSpot_cmb { set_val(SPOT_BTN, 100); wait(40); wait(40); if(DoubleTapMarkBtn) set_val(SPOT_BTN, 100); wait(40); set_val(SPOT_BTN, 0); wait(960); }
+combo EliteReload_cmb { set_val(PS4_UP,100); wait(100); }
+
+function Elite_Offset(Stick,Value) {
+    set_val(Stick, clamp(Value * (100 - abs(get_val(Stick))) / 100 + get_val(Stick), -100, 100));
+    return;
+}
+
+function EmitEliteOutput(stick, value) {
+    set_val(stick, clamp(((value / 328) * (100 - abs(get_val(stick))) / 100) + get_val(stick), -100, 100));
+}
+
+function Smooth_Tracking_Elite(step_x, step_y) {
+    track_smooth_x = (track_smooth_x * 4 + step_x) / 5;
+    track_smooth_y = (track_smooth_y * 4 + step_y) / 5;
+    Elite_Offset(XB1_RX, track_smooth_x);
+    Elite_Offset(XB1_RY, track_smooth_y);
+}
+
+combo EliteAA_Combo {
+    EliteAimAdjust(RX,  EliteTrack_Strength);
+    wait(EliteTrack_Delay);
+    EliteAimAdjust(RY,  EliteTrack_Strength);
+    wait(EliteTrack_Delay);
+    EliteAimAdjust(RX, -EliteTrack_Strength);
+    wait(EliteTrack_Delay);
+    EliteAimAdjust(RY, -EliteTrack_Strength);
+    wait(EliteTrack_Delay);
+}
+
+function EliteAimAdjust(Axis, Strength) {
+    if(abs(get_ival(Axis)) >= 8) set_val(Axis, get_val(Axis) + (Strength * Elite_AA_Intensity) / 3);
+}
+
+function ResetEliteTrackState() { track_smooth_x = 0; track_smooth_y = 0; }
+
+function FixStickDrift() {
+    if(get_val(XB1_LX) == get_ival(XB1_LX) && get_val(XB1_LY) == get_ival(XB1_LY) && isqrt(pow(abs(get_ival(XB1_LX)),2) + pow(abs(get_ival(XB1_LY)),2)) <= DeadZone) {
+        set_val(XB1_LX,0); set_val(XB1_LY,0);
+    }
+    if(get_val(XB1_RX) == get_ival(XB1_RX) && get_val(XB1_RY) == get_ival(XB1_RY) && isqrt(pow(abs(get_ival(XB1_RX)),2) + pow(abs(get_ival(XB1_RY)),2)) <= DeadZone) {
+        set_val(XB1_RX,0); set_val(XB1_RY,0);
+    }
+}
+
+int KS_anti_recoil = TRUE;  
+function ApplyEliteRecoil() {
+    if(!EliteRecoil_Active || !get_ival(FIRE_BTN)) return;
+    
+    if(abs(get_val(RX)) < abs(EliteRecoil_H) + 10) EmitEliteOutput(RX, EliteRecoil_H * 327);
+    if(abs(get_val(RY)) < EliteRecoil_V + 10) EmitEliteOutput(RY, EliteRecoil_V * 327);
+}
+
+combo Elite_FireAimBoost {
+    Elite_Offset(LX, (AimFireBoost * 7)); Elite_Offset(LY, (AimFireBoost * 2)); wait(40);
+    Elite_Offset(LX, (AimFireBoost * -7)); Elite_Offset(LY, (AimFireBoost * -2)); wait(40);
+    Elite_Offset(LX, (AimFireBoost * 7)); Elite_Offset(LY, (AimFireBoost * -2)); wait(40);
+    Elite_Offset(LX, (AimFireBoost * -7)); Elite_Offset(LY, (AimFireBoost * 2)); wait(40);
+}
+
+combo EliteYY_cmb { set_val(SWITCHWEAPON_BTN, 100); wait(40); set_val(SWITCHWEAPON_BTN, 0); wait(clamp(YY_Delay_Timing, 20, 100)); set_val(SWITCHWEAPON_BTN, 100); wait(35); set_val(SWITCHWEAPON_BTN, 0); wait(20); }
+           
+combo EliteTracking { Smooth_Tracking_Elite((track_dynamic_strength * 10) / 10, 0); wait(EliteTrack_Delay + 2); Smooth_Tracking_Elite((track_dynamic_strength * -10) / 10, 0); wait(EliteTrack_Delay + 2); }
+
+function on_the_fly_display (f_string, f_print, f_val){
+    cls_oled(0);  
+    draw_rectangle();
+    print(f_string, 20, OLED_FONT_MEDIUM, OLED_WHITE, f_print);  
+    number_to_string(f_val, find_digits(f_val));
+    time_to_clear_screen  = 2000;
+}      
+       
+define ACTIVE_WHEN_ADS    = TRUE;                     
+define ACTIVE_WHEN_FIRING = TRUE;  
+define STEP_INTERVAL =  1;                            
+define FONT_STATS_INDEX_WIDTH    = 0; 
+define FONT_STATS_INDEX_HEIGHT   = 1; 
+define FONT_STATS_INDEX_MAXCHARS = 2; 
+
+function horizontal_center_offset(number_characters, font_size) { return (128 - number_characters * FONT_STATS[font_size][FONT_STATS_INDEX_WIDTH]) / 2; }             
+              
+const string EXIT_TXT1 = "SETTINGS";  
+const string EXIT_TXT2 = "WAS SAVED"; 
+
+function save_toggles () {  
+    set_pvar(SPVAR_1,EliteRecoil_Active); 
+    set_pvar(SPVAR_2,EliteAA_Active); 
+    set_pvar(SPVAR_3,SniperBreath_Active); 
+    set_pvar(SPVAR_4,CustomSens_Active); 
+    set_pvar(SPVAR_5,Movement_BunnyHop); 
+    set_pvar(SPVAR_6,AutoSpot_Active); 
+    set_pvar(SPVAR_7,AutoReload_Active); 
+    set_pvar(SPVAR_8,HairTrigger_Active); 
+    set_pvar(SPVAR_9,StickDrift_Fix); 
+    set_pvar(SPVAR_16,StickyAim_Active);
+    set_pvar(SPVAR_17,BlockRumble_Active);
+    set_pvar(SPVAR_19,AimFireBoost_Active);
+    set_pvar(SPVAR_18,YY_Movement_Active);
+    set_pvar(SPVAR_10,VM_Speed_Setting); 
+    set_pvar(SPVAR_21,EliteRecoil_V); 
+    set_pvar(SPVAR_22,EliteRecoil_H); 
+    set_pvar(SPVAR_23,AimSize); 
+    set_pvar(SPVAR_24,FireSize); 
+    set_pvar(SPVAR_25,AimAndFireSize); 
+    set_pvar(SPVAR_26,AimSpeed); 
+    set_pvar(SPVAR_27,HipSize); 
+    set_pvar(SPVAR_28,GEN_SENS); 
+    set_pvar(SPVAR_29,ADS_SENS); 
+    set_pvar(SPVAR_30,FIRE_SENS); 
+    set_pvar(SPVAR_31,ADS_FIRE_SENS); 
+    set_pvar(SPVAR_32,GRENADE_SENS); 
+    set_pvar(SPVAR_33,DeadZone); 
+    set_pvar(SPVAR_34,AimFireBoost); 
+    set_pvar(SPVAR_35,EliteTrack_Strength);
+    set_pvar(SPVAR_36,EliteTrack_Delay);
+    set_pvar(SPVAR_37,YY_Delay_Timing);
+    need_to_be_save = FALSE;
+    combo_run(EXIT);                  
+}
+                      
+combo MESSAGE { wait(20); exit_wait = 2000; save_toggles (); cls_oled(0); print(horizontal_center_offset(sizeof(EXIT_TXT1), OLED_FONT_MEDIUM ), 2, OLED_FONT_MEDIUM, 1, EXIT_TXT1[0]); print(horizontal_center_offset(sizeof(EXIT_TXT2), OLED_FONT_MEDIUM ), 23, OLED_FONT_MEDIUM, 1, EXIT_TXT2[0]); }                        
+function blinck ( var){ if(var) BlinckColor = Green; else BlinckColor = Red; combo_run(BLINK_NOTIFY); }                           
+combo BLINK_NOTIFY { colourled(BlinckColor); wait(300); colourled(ColorOFF); wait(100); colourled(BlinckColor); wait(300); colourled(ColorOFF); }                                
+int blink_n ;
+combo Blink_MOD_ON   { colourled(ColorOFF); wait(500); colourled(ColorOFF); wait(1000); blink_n +=1; if( blink_n > 0)blink_n = 1; }                                
+                                
+const uint8 FONT_STATS[][] = { { 7, 10, 18 }, { 11, 18, 11 }, { 16, 26, 7 } };                              
+function display_edit(f_val) { print(center_x(sizeof(EditVarStr[adjust_variable_idx])-1, OLED_FONT_SMALL_WIDTH), 16, OLED_FONT_SMALL, OLED_WHITE, EditVarStr[adjust_variable_idx]); number_to_string(f_val, find_digits(f_val)); }       
+function f_go_forward (f_variable) { f_variable +=1; if(f_variable > Min_Max_Options[modName_idx][1] )f_variable = Min_Max_Options[modName_idx][0]; need_to_be_save = TRUE; blinck( f_variable ); return f_variable; }
+function f_go_back (f_variable) { f_variable -=1; if(f_variable < Min_Max_Options[modName_idx][0] )f_variable = Min_Max_Options[modName_idx][1]; need_to_be_save = TRUE; blinck( f_variable ); return f_variable; }
+
+int ssss, c_c_c,c_val;   
+function number_to_string(f_val,f_digits) {                  
+    ssss = 1;  c_val = 10000;                            
+    if(f_val < 0) { putc_oled(ssss,45); ssss += 1; f_val = abs(f_val); }                                                 
+    for(c_c_c = 5; c_c_c >= 1; c_c_c--) {                                                 
+        if(f_digits >= c_c_c) {                                             
+            putc_oled(ssss,ASCII_NUM[f_val / c_val]);    
+            f_val = f_val % c_val; ssss +=  1;                                  
+            if(c_c_c == 4) { putc_oled(ssss,44); ssss += 1; }                                        
+        }                                             
+        c_val /= 10;                                  
+    }                                                
+    puts_oled(center_x(ssss - 1,OLED_FONT_MEDIUM_WIDTH),28,OLED_FONT_MEDIUM,ssss - 1,OLED_WHITE); 
+}                                                     
+
+int n_str_;                  
+function print_number(f_val,f_digits ,print_s_x , print_s_y , f_font, f_color) {                                                      
+    n_str_ = 1;  c_val = 10000;                       
+    if(f_val < 0) { putc_oled(n_str_,45); n_str_ += 1; f_val = abs(f_val); }                                                                                               
+    for(c_c_c = 5; c_c_c >= 1; c_c_c--) {                                                 
+        if(f_digits >= c_c_c) { putc_oled(n_str_,ASCII_NUM[f_val / c_val]); f_val = f_val % c_val; n_str_ +=  1; }                                             
+        c_val /= 10;                                  
+    }                                                 
+    puts_oled(print_s_x,print_s_y,f_font,n_str_ - 1,f_color);
+}                                       
+                                                      
+int f_min, f_max;
+define Y_Arrow = 36;
+const string EDIT_VALUE_TXT = "Hold LT/L2 +"; 
+
+function edit_val( f_val) {
+    draw_rectangle();
+    print( center_x(sizeof(EDIT_VALUE_TXT)-1, OLED_FONT_SMALL_WIDTH), 53, OLED_FONT_SMALL, 0, EDIT_VALUE_TXT[0] ); 
+
+    putc_oled(1,LEFT_arrow); puts_oled(20, 28, OLED_FONT_SMALL, 1, 1);     
+    putc_oled(1,RIGHT_arrow); puts_oled(100, 28, OLED_FONT_SMALL, 1, 1);
+    
+    f_min = ValRange[adjust_variable_idx][0];                          
+    f_max = ValRange[adjust_variable_idx][1];  
+    
+    print_number(f_min ,find_digits(f_min) ,5 , 28 , OLED_FONT_SMALL, 1); 
+    print_number(f_max ,find_digits(f_max) ,110 , 28 , OLED_FONT_SMALL, 1);
+                                          
+    if(get_ival(ADS_BTN)){                  
+        if(press_hold(XB1_RIGHT)){ f_val ++; if(f_val > f_max ) f_val = f_max; display_EDIT = TRUE; need_to_be_save = TRUE; }                                     
+        if(press_hold(XB1_LEFT)){ f_val --; if(f_val < f_min ) f_val = f_min; display_EDIT = TRUE; need_to_be_save = TRUE; }                                     
+        if(press_hold(XB1_UP)){ f_val +=10; if(f_val > f_max ) f_val = f_max; display_EDIT = TRUE; need_to_be_save = TRUE; }                                     
+        if(press_hold(XB1_DOWN)){ f_val -=10; if(f_val < f_min ) f_val = f_min; display_EDIT = TRUE; need_to_be_save = TRUE; }                                     
+    }                                      
+    return f_val;                        
+}    
+                                             
+function press_hold(f_btn) { return event_press(f_btn) || get_ival(f_btn) && get_ptime(f_btn) > 250 && get_ptime(f_btn) % (get_rtime() * 8) == 0; }               
+function find_digits(f_num) { f_num = abs(f_num); if(f_num / 10000 > 0) return 5; if(f_num / 1000 > 0) return 4; if(f_num / 100 > 0) return 3; if(f_num / 10 > 0) return 2; return 1; }                                                     
+function center_x(f_chars,f_font) { return (OLED_WIDTH / 2) - ((f_chars * f_font) / 2); }                                                      
+function draw_rectangle() { 
+    rect_oled(0, 0, 128, 14, 1, 1); 
+    print(center_x(sizeof(MENU_TOP_TITLE) - 1, OLED_FONT_SMALL_WIDTH), 3, OLED_FONT_SMALL, 0, MENU_TOP_TITLE[0]);
+    rect_oled(0, 50, 128, 14, 1, 1);
+}
+
+const string ModOption_7_0 = "Disable"; const string ModOption_7_1 = "Like CoD"; const string ModOption_7_2 = "Like PUBG"; 
+const string ModOption_55_0 = "Disable"; const string ModOption_55_1 = "Fire Only"; const string ModOption_55_2 = "ADS Only"; const string ModOption_55_3 = "On Fire"; const string ModOption_55_4 = "Always On"; 
+define ShotModOptions = 31;
+const string ModOption_31_0 = "Disable"; const string ModOption_31_1 = "Fire Only"; const string ModOption_31_2 = "ADS & Fire"; const string ModOption_31_3 = "ADS Only"; 
+
+const string ModOption_50_0 = "Default"; 
+const string ModOption_50_1 = "8 ms"; 
+const string ModOption_50_2 = "6 ms"; 
+const string ModOption_50_3 = "4 ms"; 
+const string ModOption_50_4 = "2 ms"; 
+const string ModOption_50_5 = "1 ms"; 
+
+define UP_arrow = 131; define DOWN_arrow = 132; define LEFT_arrow = 133; define RIGHT_arrow = 134; define TRIANGLE_txt = 130; define Y_txt = 89; define CROSS_txt = 127; define A_txt = 65;
+int col_char_left = OLED_WHITE; int col_char_right = OLED_WHITE; int col_rec_left = 1; int col_rec_right = 1;
+define SINGLE = 28;
+const string NO_EDIT_VARIABLE =" No Edit Variable"; const string PRESS_A_TO_EDIT =" A/CROSS to Edit "; const string MOD_LABEL ="MOD:"; const string SLOT_LABEL ="MSL:";
+int slot_numb ;
+
+function display_mod( f_string, mod_name, f_toggle, f_option) {   
+    print(f_string, 18, OLED_FONT_SMALL, OLED_WHITE, mod_name); 
+    
+    putc_oled(1,LEFT_arrow); puts_oled(10, 53, OLED_FONT_SMALL, 1, 0);     
+    putc_oled(1,RIGHT_arrow); puts_oled(110, 53, OLED_FONT_SMALL, 1, 0);
+    
+    print( 35, 53, OLED_FONT_SMALL, 0, MOD_LABEL[0]); 
+    print_number(modName_idx + 1, find_digits(modName_idx + 1), 60, 53, OLED_FONT_SMALL, 0);
+    print( 70, 53, OLED_FONT_SMALL, 0, MOD_DIVIDER[0]); 
+    print_number(MAX_MODS_COUNT, find_digits(MAX_MODS_COUNT), 78, 53, OLED_FONT_SMALL, 0);
+                                                            
+    if(EditVal[ modName_idx ] == 0 ) print( center_x(sizeof(NO_EDIT_VARIABLE)-1, OLED_FONT_SMALL_WIDTH), 40, OLED_FONT_SMALL, 1, NO_EDIT_VARIABLE[0] ); 
+    else print( center_x(sizeof(PRESS_A_TO_EDIT)-1, OLED_FONT_SMALL_WIDTH), 40, OLED_FONT_SMALL, 1, PRESS_A_TO_EDIT[0] ); 
+        
+    if(f_option == 1) { if(f_toggle == 1) print(center_x(sizeof(ON) - 1, OLED_FONT_MEDIUM_WIDTH),SINGLE,OLED_FONT_MEDIUM,OLED_WHITE, ON[0]); else print(center_x(sizeof(OFF) - 1, OLED_FONT_MEDIUM_WIDTH),SINGLE,OLED_FONT_MEDIUM,OLED_WHITE,OFF[0]); }            
+    if(f_option == ShotModOptions) { if(f_toggle == 0) print(center_x(sizeof(ModOption_31_0) - 1, OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE, ModOption_31_0[0]); if(f_toggle == 1) print(center_x(sizeof(ModOption_31_1) - 1, OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE, ModOption_31_1[0]); if(f_toggle == 2) print(center_x(sizeof(ModOption_31_2) - 1, OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE, ModOption_31_2[0]); if(f_toggle == 3) print(center_x(sizeof(ModOption_31_3) - 1, OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE, ModOption_31_3[0]); }            
+    if(f_option == 50) { if(f_toggle == 0) print(center_x(sizeof(ModOption_50_0) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE,ModOption_50_0[0]); if(f_toggle == 1) print(center_x(sizeof(ModOption_50_1) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE,ModOption_50_1[0]); if(f_toggle == 2) print(center_x(sizeof(ModOption_50_2) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE,ModOption_50_2[0]); if(f_toggle == 3) print(center_x(sizeof(ModOption_50_3) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE,ModOption_50_3[0]); if(f_toggle == 4) print(center_x(sizeof(ModOption_50_4) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE,ModOption_50_4[0]); if(f_toggle == 5) print(center_x(sizeof(ModOption_50_5) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE,ModOption_50_5[0]); }            
+    if(f_option == 7) { if(f_toggle == 0) print(center_x(sizeof(ModOption_7_0) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE, ModOption_7_0[0]); if(f_toggle == 1) print(center_x(sizeof(ModOption_7_1) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE, ModOption_7_1[0]); if(f_toggle == 2) print(center_x(sizeof(ModOption_7_2) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE, ModOption_7_2[0]); }
+    if(f_option == 55) { if(f_toggle == 0) print(center_x(sizeof(ModOption_55_0) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE, ModOption_55_0[0]); if(f_toggle == 1) print(center_x(sizeof(ModOption_55_1) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE, ModOption_55_1[0]); if(f_toggle == 2) print(center_x(sizeof(ModOption_55_2) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE, ModOption_55_2[0]); if(f_toggle == 3) print(center_x(sizeof(ModOption_55_3) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE, ModOption_55_3[0]); if(f_toggle == 4) print(center_x(sizeof(ModOption_55_4) - 1,OLED_FONT_SMALL_WIDTH),SINGLE,OLED_FONT_SMALL,OLED_WHITE, ModOption_55_4[0]); }
+}           
+
+const uint8 MenuButtons [] = { XB1_UP, XB1_DOWN, XB1_LEFT, XB1_RIGHT, XB1_A, XB1_B, XB1_MENU, XB1_LT };
+int menu_btn_indx, menu_activity, MenuTimeOut;
+define menu_time_active = 30000;
+define menu_back_lock_time = 140;
+
+function CheckIfBtnIsPressed (){  
+    menu_activity = FALSE;
+    for(menu_btn_indx = 0; menu_btn_indx < 8; menu_btn_indx++){ if(event_press(MenuButtons[menu_btn_indx]) ) menu_activity = TRUE; }
+    if(menu_activity) MenuTimeOut = menu_time_active; 
+    else if(MenuTimeOut > 0) {
+        MenuTimeOut -= get_rtime();
+        if(MenuTimeOut <= 0 ){ ModMenu = FALSE; ModEdit = FALSE; display_EDIT = FALSE; display_black = FALSE; count_black = 0; gameplay_idle_time = 0; startup_splash_active = FALSE; startup_splash_stage = 0; startup_splash_time = 0; refresh_OLED = FALSE; cls_oled(0); }
+    }
+}
+
+function display_MOD_status(f_val,f_size,f_label){  
+    if(!ModMenu && !ModEdit){                                           
+        cls_oled(0); print(f_size, 3, OLED_FONT_MEDIUM ,OLED_WHITE, f_label);   
+        if( f_val ) print(center_x(sizeof(ON) - 1, OLED_FONT_LARGE_WIDTH),37,OLED_FONT_LARGE,OLED_WHITE, ON[0]); 
+        else print(center_x(sizeof(OFF) - 1, OLED_FONT_LARGE_WIDTH),37,OLED_FONT_LARGE,OLED_WHITE, OFF[0]); 
+        time_to_clear_screen = 1500; 
+    } 
+}
+
+function get_mod_toggle(idx) { if(idx == 0) return EliteRecoil_Active; if(idx == 1) return EliteAA_Active; if(idx == 2) return SniperBreath_Active; if(idx == 3) return CustomSens_Active; if(idx == 4) return Movement_BunnyHop; if(idx == 5) return AutoSpot_Active; if(idx == 6) return AutoReload_Active; if(idx == 7) return HairTrigger_Active; if(idx == 8) return StickDrift_Fix; if(idx == 9) return StickyAim_Active; if(idx == 10) return BlockRumble_Active; if(idx == 11) return AimFireBoost_Active; if(idx == 12) return YY_Movement_Active; if(idx == 13) return VM_Speed_Setting; return 0; }
+function set_mod_toggle(idx, val) { if(idx == 0) EliteRecoil_Active = val; if(idx == 1) EliteAA_Active = val; if(idx == 2) SniperBreath_Active = val; if(idx == 3) CustomSens_Active = val; if(idx == 4) Movement_BunnyHop = val; if(idx == 5) AutoSpot_Active = val; if(idx == 6) AutoReload_Active = val; if(idx == 7) HairTrigger_Active = val; if(idx == 8) StickDrift_Fix = val; if(idx == 9) StickyAim_Active = val; if(idx == 10) BlockRumble_Active = val; if(idx == 11) AimFireBoost_Active = val; if(idx == 12) YY_Movement_Active = val; if(idx == 13) VM_Speed_Setting = val; }
+function get_pvar_val(idx) { if(idx == 0) return EliteRecoil_V; if(idx == 1) return EliteRecoil_H; if(idx == 2) return AimSize; if(idx == 3) return FireSize; if(idx == 4) return AimAndFireSize; if(idx == 5) return AimSpeed; if(idx == 6) return HipSize; if(idx == 7) return GEN_SENS; if(idx == 8) return ADS_SENS; if(idx == 9) return FIRE_SENS; if(idx == 10) return ADS_FIRE_SENS; if(idx == 11) return GRENADE_SENS; if(idx == 12) return DeadZone; if(idx == 13) return AimFireBoost; if(idx == 14) return EliteTrack_Strength; if(idx == 15) return EliteTrack_Delay; if(idx == 16) return YY_Delay_Timing; return 0; }
+function set_pvar_val(idx, val) { if(idx == 0) EliteRecoil_V = val; if(idx == 1) EliteRecoil_H = val; if(idx == 2) AimSize = val; if(idx == 3) FireSize = val; if(idx == 4) AimAndFireSize = val; if(idx == 5) AimSpeed = val; if(idx == 6) HipSize = val; if(idx == 7) GEN_SENS = val; if(idx == 8) ADS_SENS = val; if(idx == 9) FIRE_SENS = val; if(idx == 10) ADS_FIRE_SENS = val; if(idx == 11) GRENADE_SENS = val; if(idx == 12) DeadZone = val; if(idx == 13) AimFireBoost = val; if(idx == 14) EliteTrack_Strength = val; if(idx == 15) EliteTrack_Delay = val; if(idx == 16) YY_Delay_Timing = val; }
+
+// ==============================================================
+// CLEAN SCRIPTED V1 ELITE BOOTLOADER
+// ==============================================================
+function EliteStartupPrint() {
+    cls_oled(0);
+    rect_oled(0, 0, 127, 63, 0, 1); 
+    
+    print(center_x(11, 11), 10, OLED_FONT_MEDIUM, 1, BOOT_TXT_1[0]); 
+    print(center_x(5, 16), 28, OLED_FONT_LARGE, 1, BOOT_TXT_2[0]);   
+    print(center_x(10, 7), 52, OLED_FONT_SMALL, 1, BOOT_TXT_3[0]);   
+}
+
+function ElitePrint() {
+    cls_oled(0);
+    rect_oled(0, 0, 127, 63, 0, 1);
+    
+    print(center_x(11, 11), 16, OLED_FONT_MEDIUM, 1, BOOT_TXT_1[0]);
+    print(center_x(5, 16), 36, OLED_FONT_LARGE, 1, BOOT_TXT_2[0]);
+} ����������������
